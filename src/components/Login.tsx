@@ -14,6 +14,10 @@ import {
 } from "@chakra-ui/react";
 import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import { useEffect, useState } from "react";
+import { login } from "utils/calls";
+import { Mail } from "utils/interface";
+import { protectPassword } from "utils/security";
+import { timestamp } from "utils/time";
 
 const Login = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -68,7 +72,33 @@ const Login = () => {
               h={"35px"}
               width={"100%"}
               disabled={!(correctMail && passwd.length > 0)}
-              onClick={() => console.log("kek")}
+              onClick={async () => {
+                const time = timestamp();
+                console.log("Timestamp: ", time);
+                const resp = await login({
+                  mail: mail as Mail,
+                  password: protectPassword(passwd),
+                  timestamp: time,
+                });
+                if (resp.response.success) {
+                  localStorage.setItem(
+                    "JWTProof",
+                    JSON.stringify({
+                      proof: resp.response.JWTProof,
+                      expDate: resp.response.JWTExpires,
+                    })
+                  );
+
+                  localStorage.setItem(
+                    "RTProof",
+                    JSON.stringify({
+                      proof: resp.response.RTProof,
+                      expDate: resp.response.RTExpires,
+                    })
+                  );
+                }
+                console.log(resp);
+              }}
             >
               Submit
             </Button>

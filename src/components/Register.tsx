@@ -15,7 +15,9 @@ import {
   useDisclosure,
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
-import { getCode } from "utils/calls";
+import { getCode, register } from "utils/calls";
+import { Mail } from "utils/interface";
+import { protectPassword } from "utils/security";
 
 const Register = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -101,7 +103,13 @@ const Register = () => {
                 value={code}
                 onChange={(e) => setCode(e.target.value.slice(0, 6))}
               />
-              <Button disabled={!correctEmail} onClick={getCode}>
+              <Button
+                disabled={!correctEmail}
+                onClick={() => {
+                  const resp = getCode(mail as Mail);
+                  console.log(resp);
+                }}
+              >
                 Send code
               </Button>
             </HStack>
@@ -111,7 +119,14 @@ const Register = () => {
             <Button
               h={"35px"}
               width={"100%"}
-              onClick={() => console.log("kek")}
+              onClick={() => {
+                const resp = register({
+                  mail: mail as Mail,
+                  password: protectPassword(passwd),
+                  verificationCode: Number(code),
+                });
+                console.log(resp);
+              }}
               disabled={!(correctEmail && passwordsEq && code.length == 6)}
             >
               Submit
