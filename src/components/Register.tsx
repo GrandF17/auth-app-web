@@ -17,6 +17,7 @@ import {
 import { useEffect, useState } from "react";
 import { getCode, register } from "utils/calls";
 import { Mail } from "utils/interface";
+import { saveEmail, saveJWT, saveRT } from "utils/localStorage";
 import { protectPassword } from "utils/security";
 
 const Register = () => {
@@ -105,9 +106,9 @@ const Register = () => {
               />
               <Button
                 disabled={!correctEmail}
-                onClick={() => {
-                  const resp = getCode(mail as Mail);
-                  console.log(resp);
+                onClick={async () => {
+                  const result = await getCode(mail as Mail);
+                  console.log(result);
                 }}
               >
                 Send code
@@ -119,13 +120,19 @@ const Register = () => {
             <Button
               h={"35px"}
               width={"100%"}
-              onClick={() => {
-                const resp = register({
+              onClick={async () => {
+                const result = await register({
                   mail: mail as Mail,
                   password: protectPassword(passwd),
                   verificationCode: Number(code),
                 });
-                console.log(resp);
+
+                console.log(result);
+                if (result.response.success) {
+                  saveEmail(mail as Mail);
+                  saveJWT(result.response);
+                  saveRT(result.response);
+                }
               }}
               disabled={!(correctEmail && passwordsEq && code.length == 6)}
             >

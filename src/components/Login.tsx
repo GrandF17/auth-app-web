@@ -18,6 +18,7 @@ import { login } from "utils/calls";
 import { Mail } from "utils/interface";
 import { protectPassword } from "utils/security";
 import { timestamp } from "utils/time";
+import { saveEmail, saveJWT, saveRT } from "utils/localStorage";
 
 const Login = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -73,31 +74,18 @@ const Login = () => {
               width={"100%"}
               disabled={!(correctMail && passwd.length > 0)}
               onClick={async () => {
-                const time = timestamp();
-                console.log("Timestamp: ", time);
-                const resp = await login({
+                const result = await login({
                   mail: mail as Mail,
                   password: protectPassword(passwd),
-                  timestamp: time,
+                  timestamp: timestamp(),
                 });
-                if (resp.response.success) {
-                  localStorage.setItem(
-                    "JWTProof",
-                    JSON.stringify({
-                      proof: resp.response.JWTProof,
-                      expDate: resp.response.JWTExpires,
-                    })
-                  );
 
-                  localStorage.setItem(
-                    "RTProof",
-                    JSON.stringify({
-                      proof: resp.response.RTProof,
-                      expDate: resp.response.RTExpires,
-                    })
-                  );
+                console.log(result);
+                if (result.response.success) {
+                  saveEmail(mail as Mail);
+                  saveJWT(result.response);
+                  saveRT(result.response);
                 }
-                console.log(resp);
               }}
             >
               Submit

@@ -49,15 +49,19 @@ export interface Login {
     timestamp: number;       // to avoid replay atacks
 }
 
+export interface Proof {
+    proof: Hash[];
+    expires: number;
+}
+
 export interface ServerResp {
     success: boolean;
     root?: Hash;
-    RTProof?: Hash[];
-    RTExpires?: number;
-    JWTProof?: Hash[];
-    JWTExpires?: number;
+    RT?: Proof;
+    JWT?: Proof;
 }
 
+///////////////////////////////////////
 export interface ExtendedResponce {
     status: number;
     response: ServerResp;

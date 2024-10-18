@@ -11,9 +11,6 @@ export const protectPassword = (password: string) => {
     return keccak256(
         coder.encode(
             ["string", "string"],
-            [
-                password,
-                SALT
-            ]
+            [password, SALT]
         )) as Hash;
 }

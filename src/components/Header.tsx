@@ -1,8 +1,11 @@
 import { Box, Heading, HStack } from "@chakra-ui/react";
-import Register from "./Register";
-import Login from "./Login";
+
+import Register from "components/Register";
+import Login from "components/Login";
+import { useGlobalContext } from "components/Context";
 
 const Header = () => {
+  const { authenticated } = useGlobalContext();
   return (
     <Box
       top={0}
@@ -13,10 +16,14 @@ const Header = () => {
     >
       <HStack p={"10px 7%"} justifyContent={"space-between"}>
         <Heading size={"xl"}>Authantication App</Heading>
-        <HStack>
-          <Register />
-          <Login />
-        </HStack>
+        {authenticated ? (
+          <Box>Authorised!</Box>
+        ) : (
+          <HStack>
+            <Register />
+            <Login />
+          </HStack>
+        )}
       </HStack>
     </Box>
   );
