@@ -7,6 +7,7 @@ export const saveEmail = (mail: Mail) => {
         "mail",
         JSON.stringify(mail)
     );
+    window.dispatchEvent(new Event("newMail"));
 }
 
 export const saveJWT = (response: ServerResp) => {
@@ -16,9 +17,10 @@ export const saveJWT = (response: ServerResp) => {
         "JWTProof",
         JSON.stringify({
             proof: response.JWT.proof,
-            expDate: response.JWT.expires,
-        })
+            expires: response.JWT.expires,
+        } as Proof)
     );
+    window.dispatchEvent(new Event("newJWT"));
 }
 
 export const saveRT = (response: ServerResp) => {
@@ -28,9 +30,10 @@ export const saveRT = (response: ServerResp) => {
         "RTProof",
         JSON.stringify({
             proof: response.RT.proof,
-            expDate: response.RT.expires,
-        })
+            expires: response.RT.expires,
+        } as Proof)
     );
+    window.dispatchEvent(new Event("newRT"));
 }
 
 /////////////////////////////////

@@ -10,6 +10,7 @@ import { Auth, Hash, Proof } from "utils/interface";
 import { getMail, getRT, getJWT } from "utils/localStorage";
 import { useIsTouchDevice } from "utils/detect-mobile";
 import { timestamp } from "utils/time";
+import { isValidToken } from "utils/token";
 
 interface ContextProviderProps {
   children: ReactNode;
@@ -34,92 +35,83 @@ const GlobalContextProvider = ({ children }: ContextProviderProps) => {
   const [authenticated, setAuthenticated] = useState(false);
   const [root, setRoot] = useState(undefined as Hash | undefined);
 
-  // local storage values:
+  // ===============================
+  // ======== local storage ========
+
   const [mail, setMail] = useState(getMail());
   const [RT, setRT] = useState(getRT());
   const [JWT, setJWT] = useState(getJWT());
 
-  /////////////////////////////////
+  useEffect(() => {
+        const handleNewMail = () => setMail(getMail())
+        const handleNewJWT = () => setJWT(getJWT())
+        const handleNewRT = () => setRT(getRT())
 
-  const isNotExpired = (timestamp_: number) => {
-    return timestamp_ > timestamp();
-  };
+        window.addEventListener("newMail", handleNewMail);
+        window.addEventListener("newJWT", handleNewJWT);
+        window.addEventListener("newRT", handleNewRT);
 
-  const isValidToken = (token: Proof | null) => {
-    return token && isNotExpired(token.expires);
-  };
+        return () => {
+            window.removeEventListener("newMail", handleNewMail);
+            window.removeEventListener("newJWT", handleNewJWT);
+            window.removeEventListener("newRT", handleNewRT);
+        };
+  }, []);
 
-  /////////////////////////////////
+  // ===============================
+  // ======== other effects ========
 
   useEffect(() => {
     setIsMobile(useIsTouchDevice);
   }, []);
 
+  useEffect(() => {
+    if (!root) return;
+    setAuthenticated(true);
+  }, [root]);
+
   /**
    * @info refresh handler to get new JWT
    */
   useEffect(() => {
+    if (authenticated || !mail) return;
+
     const callAsync = async () => {
-      // if no email in local store or already authenticated no need to refresh
-      if (authenticated || !mail) return;
-      // no need to call if JWT is valid
-      if (isValidToken(JWT)) return;
-      // call only if RT is valid
-      if (!isValidToken(RT)) return;
+      if (isValidToken(RT) && !isValidToken(JWT)) {
+        const result = await refresh({
+          mail,
+          proof: RT!.proof,
+          timestamp: timestamp(),
+        } as Auth);
 
-      console.log("RT: ", RT);
-
-      const now = timestamp();
-      const result = await refresh({
-        mail,
-        proof: RT!.proof,
-        timestamp: now,
-      } as Auth);
-
-      setJWT(result.response.JWT!);
+        setJWT(result.response.JWT!);
+      }
     };
 
-    callAsync().catch((e) => {
-      console.log("Error in refresh in Context: ", e);
-    });
+    callAsync().catch((e) => console.log("ContextErr in refresh: ", e));
   }, [RT, JWT, mail]);
 
   /**
    * @info auth handler to access DB by JWT
    */
   useEffect(() => {
+    if (authenticated || !mail) return;
+
     const callAsync = async () => {
-      // if no email in local store or already authenticated no need to refresh
-      if (authenticated || !mail) return;
-      // call only if JWT is valid
-      if (!isValidToken(JWT)) return;
+      if (isValidToken(JWT)) {
+        const result = await auth({
+          mail,
+          proof: JWT!.proof,
+          timestamp: timestamp(),
+        } as Auth);
 
-      console.log("JWT: ", JWT);
-
-      const now = timestamp();
-      const result = await auth({
-        mail,
-        proof: JWT!.proof,
-        timestamp: now,
-      } as Auth);
-
-      if (result.response.root) setRoot(result.response.root as Hash);
+        if (result.response.root)
+          setRoot(result.response.root as Hash);
+      }
     };
 
-    callAsync().catch((e) => {
-      console.log("Error in auth in Context: ", e);
-    });
+    callAsync().catch((e) => console.log("ContextErr in auth: ", e));
   }, [JWT, mail]);
-
-  /**
-   * @info set authenticated status to true
-   */
-  useEffect(() => {
-    if (!root) return;
-
-    setAuthenticated(true);
-    console.log("Your root: ", root);
-  }, [root]);
 
   return (
     <GlobalContext.Provider
